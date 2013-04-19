@@ -13,6 +13,7 @@
 %token LBRACK RBRACK
 
 %token PLUS MINUS MUL DIV
+%token AMPERSAND
 
 %token PIPE
 
@@ -23,8 +24,9 @@
 
 %token EOF
 
-%start parse
 %type <Ast.toplevel_entry list> parse
+
+%start parse
 
 %%
 
@@ -38,9 +40,10 @@ toplevel_entry:
    | formula annotations PERIOD { Belief ($1, $2) }
    | clause                     { Clause $1 }
 
-clause: triggering_event annotations LARROW plan_body PERIOD { { triggering_event = $1;
-																 annotations = $2;
-																 body = $4 } }
+clause: triggering_event annotations plan_context LARROW plan_body PERIOD { { triggering_event = $1;
+																			  annotations = $2;
+																			  context = $3;
+																			  body = $5 } }
 
 triggering_event: event_type goal_type formula { { event_type = $1;
 												   goal_type = $2;
@@ -58,6 +61,10 @@ goal_type:
    | EMARK { Achievement }
    | QMARK { Test }
 
+plan_context:
+   |                 { TAtom "true" }
+   | COLON logic_exp { $2 }
+
 plan_body:                                     { [] }
    | plan_action                               { [$1] }
    | plan_action SEMICOLON plan_body           { $1::$3 }
@@ -72,11 +79,11 @@ plan_action_prefix:
    | PLUS   { MVarPut }
 
 term:
-     NUMBER                     { TNumber $1 }
-   | STRING                     { TString $1 }
-   | ATOM                       { TAtom $1 }
-   | VARIABLE                   { TVariable $1 }
-   | ATOM LPAR term_seq RPAR    { TStructure ($1, $3) }
+     NUMBER                              { TNumber $1 }
+   | STRING                              { TString $1 }
+   | ATOM                                { TAtom $1 }
+   | VARIABLE                            { TVariable $1 }
+   | ATOM LPAR term_seq RPAR             { TStructure ($1, $3) }
    | LBRACK list_literal_elements RBRACK { $2 }
 
 term_seq:
@@ -87,6 +94,11 @@ list_literal_elements:                         { nil }
    | term                                      { TStructure ("cons", [$1; nil]) }
    | term COMMA list_literal_elements          { TStructure ("cons", [$1; $3]) }
    | term PIPE term                            { TStructure ("cons", [$1; $3]) }
+
+logic_exp:
+   | term                     { $1 }
+   | term AMPERSAND logic_exp { TStructure ("and", [$1; $3]) }
+   | term PIPE logic_exp      { TStructure ("or", [$1; $3]) }
 
 formula_seq:
    |                           { [] }

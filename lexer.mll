@@ -10,7 +10,8 @@ let atom = lowercase_letter (letter | digit)*
 let var = uppercase_letter (letter | digit)*
 
 rule token = parse
-  [' ' '\t' '\r' '\n'] { token lexbuf }
+  ['\r' '\n']          { Lexing.new_line lexbuf; token lexbuf }
+| [' ' '\t']           { token lexbuf }
 | digit+ as lxm        { NUMBER (int_of_string lxm) }
 | var as lxm           { VARIABLE lxm }
 | atom as lxm          { ATOM lxm }
@@ -23,6 +24,7 @@ rule token = parse
 | '-'                  { MINUS }
 | '*'                  { MUL }
 | '/'                  { DIV }
+| '&'                  { AMPERSAND }
 | '|'                  { PIPE }
 | '!'                  { EMARK }
 | "!!"                 { EMARK2 }

@@ -17,6 +17,7 @@ let list first rest = TStructure ("cons", [first; rest])
 type clause =
 	{ triggering_event: triggering_event;
 	  annotations: formula list;
+	  context: term;
 	  body: plan_action list }
 and triggering_event =
 	{ event_type: event_type;
