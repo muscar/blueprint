@@ -1,5 +1,8 @@
-all: frontend main.ml
-	ocamlc ast.cmo lexer.cmo parser.cmo main.ml -o blueprint
+all: frontend toplevel
+	ocamlc ast.cmo lexer.cmo parser.cmo main.cmo -o blueprint
+
+toplevel: frontend main.ml
+	ocamlc -c main.ml
 
 frontend: parser lexer
 

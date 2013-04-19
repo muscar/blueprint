@@ -14,8 +14,9 @@ let nil = TAtom "nil"
 let list first rest = TStructure ("cons", [first; rest])
 
 (** Plans *)
-type plan =
+type clause =
 	{ triggering_event: triggering_event;
+	  annotations: formula list;
 	  body: plan_action list }
 and triggering_event =
 	{ event_type: event_type;
@@ -31,3 +32,7 @@ and action_op =
    | MVarRead
    | MVarPut
 and formula = name * term list
+
+type toplevel_entry = 
+  | Belief of formula * formula list
+  | Clause of clause

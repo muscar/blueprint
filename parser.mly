@@ -24,20 +24,31 @@
 %token EOF
 
 %start parse
-%type <Ast.plan> parse
+%type <Ast.toplevel_entry list> parse
 
 %%
 
-parse: plan { $1 }
+parse: toplevel              { $1 }
 
-plan: triggering_event LARROW plan_body PERIOD { { triggering_event = $1;
-												   body = $3 } }
+toplevel:
+   | toplevel_entry          { [$1] }
+   | toplevel_entry toplevel { $1::$2 }
+
+toplevel_entry:
+   | formula annotations PERIOD { Belief ($1, $2) }
+   | clause                     { Clause $1 }
+
+clause: triggering_event annotations LARROW plan_body PERIOD { { triggering_event = $1;
+																 annotations = $2;
+																 body = $4 } }
 
 triggering_event: event_type goal_type formula { { event_type = $1;
 												   goal_type = $2;
 												   formula = $3 } }
 
-formula: ATOM LPAR term_seq RPAR               { ($1, $3) }
+formula: 
+   | ATOM                                      { ($1, []) }
+   | ATOM LPAR term_seq RPAR                   { ($1, $3) }
 
 event_type:
    | PLUS  { Add }
@@ -76,3 +87,12 @@ list_literal_elements:                         { nil }
    | term                                      { TStructure ("cons", [$1; nil]) }
    | term COMMA list_literal_elements          { TStructure ("cons", [$1; $3]) }
    | term PIPE term                            { TStructure ("cons", [$1; $3]) }
+
+formula_seq:
+   |                           { [] }
+   | formula                   { [$1] }
+   | formula COMMA formula_seq { $1::$3 }
+
+annotations:
+   |                           { [] }
+   | LBRACK formula_seq RBRACK { $2 }
