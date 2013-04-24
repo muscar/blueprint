@@ -1,9 +1,11 @@
+open Utils
+
 open Lexer
 open Parser
+open Ir
+open Emit
 
 exception ParseError of exn * (int * int * string)
-
-let ( >> ) f g h = f (g h)
 
 let parse lexbuf =
   try
@@ -24,3 +26,8 @@ let with_file path f =
 let parse_file path = with_file path (parse >> Lexing.from_channel)
 
 let parse_string = parse >> Lexing.from_string
+
+let main () =
+  parse_file Sys.argv.(1) |> ir_of_ast |> js_of_ir_object |> print_endline;;
+
+main ()

@@ -1,4 +1,4 @@
-type name = string
+open Common
 
 (** Terms *)
 type term =
@@ -37,3 +37,6 @@ and formula = name * term list
 type toplevel_entry = 
   | Belief of formula * formula list
   | Clause of clause
+
+let clause_name { triggering_event } = fst triggering_event.formula
+let clause_args { triggering_event } = snd triggering_event.formula

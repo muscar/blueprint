@@ -5,7 +5,9 @@ today(friday).
 <- !bar(X);
    !foo(Xs).
 
-+!bar(X) : X & Y <- !baz(X).
++!bar(X, Y) : X & Y <- !baz(X, Y).
 
 +!p(X) [context(promise)]
 <- !q(X).
+
++!test <- !testaux(pair(1, 2)).
