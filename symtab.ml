@@ -1,6 +1,8 @@
 open Utils
 
-type ('a, 'b) t = (('a, 'b) Hashtbl.t) Stack.t
+type ('a, 'b) scope = ('a, 'b) Hashtbl.t
+
+type ('a, 'b) t = (('a, 'b) scope) Stack.t
 
 let empty () = Stack.create ()
 
@@ -27,8 +29,22 @@ let intern st name data =
 	Hashtbl.find (Stack.top st) name
   with Not_found -> register st name data; data
 
+let intern_init st name f =
+  try
+	Hashtbl.find (Stack.top st) name
+  with Not_found ->
+	let data = f () in
+	register st name data; data
+
 let in_scope f = fun st ->
   enter_scope st;
   let res = f st in
   exit_scope st;
   res
+
+let current st = Stack.top st
+
+let map_scope f scope =
+  let acc = ref [] in
+  Hashtbl.iter (fun k v -> acc := (f k v)::!acc) scope;
+  !acc

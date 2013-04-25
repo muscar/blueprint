@@ -8,6 +8,6 @@ today(friday).
 +!bar(X, Y) : X & Y <- !baz(X, Y).
 
 +!p(X) [context(promise)]
-<- !q(X).
+<- !q(pair(X, 1)).
 
 +!test <- !testaux(pair(1, 2)).

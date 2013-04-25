@@ -91,14 +91,14 @@ term_seq:
    | term COMMA term_seq        { $1::$3 }
 
 list_literal_elements:                         { nil }
-   | term                                      { TStructure ("cons", [$1; nil]) }
-   | term COMMA list_literal_elements          { TStructure ("cons", [$1; $3]) }
-   | term PIPE term                            { TStructure ("cons", [$1; $3]) }
+   | term                                      { TStructure ("$cons", [$1; nil]) }
+   | term COMMA list_literal_elements          { TStructure ("$cons", [$1; $3]) }
+   | term PIPE term                            { TStructure ("$cons", [$1; $3]) }
 
 logic_exp:
    | term                     { $1 }
-   | term AMPERSAND logic_exp { TStructure ("and", [$1; $3]) }
-   | term PIPE logic_exp      { TStructure ("or", [$1; $3]) }
+   | term AMPERSAND logic_exp { TStructure ("$and", [$1; $3]) }
+   | term PIPE logic_exp      { TStructure ("$or", [$1; $3]) }
 
 formula_seq:
    |                           { [] }

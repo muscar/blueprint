@@ -32,7 +32,7 @@ backend: utils frontend emit.ml
 	ocamlc -c emit.ml
 
 linecount:
-	find . -name "*.ml*" -exec wc -l '{}' \; | tr -s ' ' | cut -d' ' -f2 | paste -s -d '+' - | bc
+	cat `find . -name "*.ml*"` | wc -l
 
 clean:
 	rm -f parser.ml parser.mli lexer.ml
