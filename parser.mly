@@ -8,6 +8,8 @@
 %token <string> VARIABLE
 %token <string> ACTION
 
+%token DO
+
 %token LARROW
 
 %token LPAR RPAR
@@ -69,6 +71,7 @@ plan_context:
 plan_body:                                     { [] }
    | plan_action                               { [$1] }
    | plan_action SEMICOLON plan_body           { $1::$3 }
+   | DO plan_action SEMICOLON plan_body        { [] }
 
 plan_action:
    | plan_action_prefix formula          { ($1, $2) }

@@ -32,6 +32,7 @@ and action_op =
    | MVarTake
    | MVarRead
    | MVarPut
+   | Do
 and formula = name * term list
 
 type toplevel_entry = 
