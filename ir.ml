@@ -2,6 +2,8 @@ open Utils
 open Common
 open Ast
 
+module StringSet = Set.Make(String)
+
 type ir =
   | IRInt of int
   | IRString of string
@@ -17,8 +19,9 @@ type symtab = (name, ir_ref_type) Symtab.t
 type ir_object = { fields: ir_field list;
 				   methods: ir_method list }
 and ir_field = name * ir list
-and ir_method = name * ir_parameter list * ir list
+and ir_method = name * ir_parameter list * ir_local list * ir list
 and ir_parameter = name * index
+and ir_local = name
 
 let rec ir_of_term st = function
   | TNumber i -> IRInt i
@@ -38,9 +41,14 @@ let ir_of_plan st (name, clauses) =
 	| TVariable v -> [v]
 	| TStructure (_, args) -> args |> List.map term_vars |> List.concat
 	| _ -> [] in
-  let formula_vars (_, args) = args |> List.map term_vars |> List.concat in
+  let clause_vars c = c |> clause_args |> List.map term_vars |> List.concat in
+  let plan_vars clauses = clauses |> List.map clause_vars
+                                  |> List.concat
+                                  |> List.fold_left (flip StringSet.add) StringSet.empty
+								  |> StringSet.elements in
   let params = List.mapi (fun idx _ ->
 	("param" ^ (string_of_int idx), idx)) (clause_args (List.hd clauses)) in
+  let locals = plan_vars clauses in
   let ir_of_triggering_event te =
 	List.mapi (fun idx arg ->
 	  IRCall ("$unify", [IRLoad (IRParamRef, fst (List.nth params idx));
@@ -55,30 +63,29 @@ let ir_of_plan st (name, clauses) =
    | (MVarRead, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
    | (MVarPut, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f)) in
   let ir_of_clause c =
-	let locals = c.triggering_event.formula |> formula_vars in
-	List.iter (fun param -> Symtab.register st param IRLocalRef) locals;
 	let te_test = ir_of_triggering_event c.triggering_event in
 	let ctx_test = [ir_of_context c.context] in
 	(IRCall ("$and", te_test @ ctx_test),
 	 List.map ir_of_plan_action c.body) in
   Symtab.enter_scope st;
-	(* params |> List.map (flip pair IRParamRef >> fst) *)
-    (*        |> Symtab.register_many st; *)
-	(* params |> List.map (fun (param, _) -> (param, IRParamRef)) *)
-    (*        |> Symtab.register_many st; *)
+
   List.iter (fun (param, _) -> Symtab.register st param IRParamRef) params;
+  List.iter (fun param -> Symtab.register st param IRLocalRef) locals;
+
   let (pclauses, nclauses) = List.partition (fun clause ->
 	clause.triggering_event.event_type = Add) clauses in
   let default_clause = (match nclauses with
 	| [] -> (IRCall ("$error", [IRString ("plan " ^ name ^ " failed")]))
 	| [c] | c::_ -> let test, body = ir_of_clause c in
 					IRCond (test, body, [IRCall ("$error", [IRString ("plan " ^ name ^ " failed")])])) in
+  let unbind_locals = List.map (fun local ->
+	IRCall ("$unbind", [IRLoad (IRLocalRef, local)])) locals in
   let body = List.fold_left (fun alt c ->
 	let test, body = ir_of_clause c in
-	IRCond (test, body, [alt])) default_clause pclauses in
-  let plan = (name, params, [body]) in
+	unbind_locals @ [IRCond (test, body, alt)]) [default_clause] pclauses in
+  let meth = (name, params, locals, body) in
   Symtab.exit_scope st;
-  plan
+  meth
 
 let ir_of_ast ast =
   let module StringSet = Set.Make(String) in

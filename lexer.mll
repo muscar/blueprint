@@ -8,6 +8,7 @@ let uppercase_letter = ['A'-'Z']
 let letter = lowercase_letter | uppercase_letter
 let atom = lowercase_letter (letter | digit)*
 let var = uppercase_letter (letter | digit)*
+let action = letter* '.' (letter | digit) (letter | digit | '.')+
 
 rule token = parse
   ['\r' '\n']          { Lexing.new_line lexbuf; token lexbuf }
@@ -15,6 +16,8 @@ rule token = parse
 | digit+ as lxm        { NUMBER (int_of_string lxm) }
 | var as lxm           { VARIABLE lxm }
 | atom as lxm          { ATOM lxm }
+| action as lxm        { ACTION lxm }
+| "\"" ([^ '"'])* "\"" as lxm  { STRING (String.sub lxm 1 (String.length lxm - 2)) }
 | "<-"                 { LARROW }
 | '('                  { LPAR }
 | ')'                  { RPAR }
@@ -34,6 +37,4 @@ rule token = parse
 | '.'                  { PERIOD }
 | ';'                  { SEMICOLON }
 | ':'                  { COLON }
-| '\''                 { SQUOTE }
-| '"'                  { DQUOTE }
 | eof                  { EOF }

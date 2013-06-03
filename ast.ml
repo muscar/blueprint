@@ -40,3 +40,4 @@ type toplevel_entry =
 
 let clause_name { triggering_event } = fst triggering_event.formula
 let clause_args { triggering_event } = snd triggering_event.formula
+let clause_annotations { annotations } = annotations
