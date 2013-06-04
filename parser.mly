@@ -68,10 +68,10 @@ plan_context:
    |                 { TAtom "true" }
    | COLON logic_exp { $2 }
 
-plan_body:                                     { [] }
-   | plan_action                               { [$1] }
-   | plan_action SEMICOLON plan_body           { $1::$3 }
-   | DO plan_action SEMICOLON plan_body        { [] }
+plan_body:
+   | plan_action                               { Action $1 }
+   | plan_action SEMICOLON plan_body           { ActionSeq ($1, $3) }
+   | DO plan_action SEMICOLON plan_body        { ActionDo ($2, $4) }
 
 plan_action:
    | plan_action_prefix formula          { ($1, $2) }

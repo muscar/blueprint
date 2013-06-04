@@ -44,7 +44,8 @@ struct
 	| IRCall ("$or", args) -> js_of_ir_seq args ~sep:" || "
 	| IRCall (name, args) -> sprintf "%s(%s)" name (js_of_ir_seq args ~sep:", ")
 	| IRReturn -> "return"
-	| IRBind (ctx, ir1, ir2) -> sprintf "%s.bind(%s, function () { %s; })" ctx (js_of_ir ir1) (js_of_ir ir2)
+	| IRBind (ctx, ir1, irs) ->
+	  sprintf "%s.bind(%s, function () { %s; })" ctx (js_of_ir ir1) (js_of_ir_seq irs ~sep:"; ")
   and js_of_ir_seq ?sep:(s="; ") ir_seq = String.concat s (List.map js_of_ir ir_seq)
 
   let js_of_ir_field (name, args) =

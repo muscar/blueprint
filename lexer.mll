@@ -13,11 +13,11 @@ let action = atom '.' (atom | '.')+
 rule token = parse
   ['\r' '\n']          { Lexing.new_line lexbuf; token lexbuf }
 | [' ' '\t']           { token lexbuf }
+| "do"                 { DO }
 | digit+ as lxm        { NUMBER (int_of_string lxm) }
 | var as lxm           { VARIABLE lxm }
 | atom as lxm          { ATOM lxm }
 | action as lxm        { ACTION lxm }
-| "do"                 { DO }
 | "\"" ([^ '"'])* "\"" as lxm  { STRING (String.sub lxm 1 (String.length lxm - 2)) }
 | "<-"                 { LARROW }
 | '('                  { LPAR }

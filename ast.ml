@@ -18,21 +18,24 @@ type clause =
 	{ triggering_event: triggering_event;
 	  annotations: formula list;
 	  context: term;
-	  body: plan_action list }
+	  body: plan_stmt }
 and triggering_event =
 	{ event_type: event_type;
 	  goal_type: goal_type;
 	  formula: formula }
 and event_type = Add | Del
 and goal_type = Achievement | Test
+and plan_stmt =
+  | Action of plan_action
+  | ActionSeq of plan_action * plan_stmt
+  | ActionDo of plan_action * plan_stmt
 and plan_action = action_op * formula
 and action_op = 
-   | Call
-   | AsyncCall
-   | MVarTake
-   | MVarRead
-   | MVarPut
-   | Do
+  | Call
+  | AsyncCall
+  | MVarTake
+  | MVarRead
+  | MVarPut
 and formula = name * term list
 
 type toplevel_entry = 

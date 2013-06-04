@@ -12,7 +12,7 @@ type ir =
   | IRCond of ir * ir list * ir list
   | IRNew of string * ir list
   | IRCall of string * ir list
-  | IRBind of name * ir * ir
+  | IRBind of name * ir * ir list
   | IRReturn
 and ir_ref_type = IRFieldRef | IRParamRef | IRLocalRef
 
@@ -44,8 +44,13 @@ let ir_of_plan st (name, clauses) =
 	| TStructure (_, args) -> args |> List.map term_vars |> List.concat
 	| _ -> [] in
   let te_vars c = c |> clause_args |> List.map term_vars |> List.concat in
-  let body_vars c = List.map (fun (_, (_, terms)) ->
-	terms |> List.map term_vars |> List.concat) c.body |> List.concat in
+  let rec body_vars c = plan_stmt_vars c.body
+  and plan_stmt_vars = function
+	| Action act -> action_vars act
+	| ActionSeq (act, stmt) | ActionDo (act, stmt) ->
+	  action_vars act @ plan_stmt_vars stmt
+  and action_vars (_, (_, terms)) =
+	terms |> List.map term_vars |> List.concat in
   let clause_vars c = te_vars c @ body_vars c in
   let plan_vars clauses = clauses |> List.map clause_vars
                                   |> List.concat
@@ -62,12 +67,15 @@ let ir_of_plan st (name, clauses) =
 	| TStructure ("$and", args) -> IRCall ("$and", List.map ir_of_context args)
 	| term -> ir_of_term st term in
   let ir_of_plan_action = function
-	| (Do, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (Call, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (AsyncCall, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarTake, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarRead, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarPut, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f)) in
+  let rec ir_of_plan_stmt context = function
+	| Action act -> [ir_of_plan_action act]
+	| ActionDo (act, stmt) -> [IRBind (context, ir_of_plan_action act, ir_of_plan_stmt context stmt)]
+	| ActionSeq (act, stmt) -> (ir_of_plan_action act) :: ir_of_plan_stmt context stmt in
   let ir_of_clause c =
 	let te_test = ir_of_triggering_event c.triggering_event in
 	let ctx_test = [ir_of_context c.context] in
@@ -77,10 +85,7 @@ let ir_of_plan st (name, clauses) =
 					 | [TAtom ctx_name] -> ctx_name
 					 | _ -> "default"
 	  with Not_found -> "default") in
-	(IRCall ("$and", te_test @ ctx_test),
-	 [List.fold_right (fun action ir ->
-	   IRBind (context, ir_of_plan_action action, ir)) c.body IRReturn]) in
-	 (* List.map ir_of_plan_action c.body) in *)
+	(IRCall ("$and", te_test @ ctx_test), ir_of_plan_stmt context c.body) in
   Symtab.enter_scope st;
 
   List.iter (fun (param, _) -> Symtab.register st param IRParamRef) params;
