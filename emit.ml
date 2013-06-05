@@ -43,7 +43,7 @@ struct
 	| IRCall ("$and", args) -> js_of_ir_seq args ~sep:" && "
 	| IRCall ("$or", args) -> js_of_ir_seq args ~sep:" || "
 	| IRCall (name, args) -> sprintf "%s(%s)" name (js_of_ir_seq args ~sep:", ")
-	| IRReturn -> "return"
+	| IRReturn ctx -> sprintf "%s.unit();" ctx
 	| IRBind (ctx, ir1, irs) ->
 	  sprintf "%s.bind(%s, function () { %s; })" ctx (js_of_ir ir1) (js_of_ir_seq irs ~sep:"; ")
   and js_of_ir_seq ?sep:(s="; ") ir_seq = String.concat s (List.map js_of_ir ir_seq)
@@ -63,7 +63,7 @@ struct
 	let fs = fields |> List.map js_of_ir_field |> String.concat "; " in
 	let ms = methods |> List.map js_of_ir_method |> String.concat "; " in
 	let term_cts = Symtab.current term_ids |> Symtab.map_scope (sprintf "var %s = %d") |> String.concat "; " in
-	sprintf "%s; function agent() { %s; %s; }" term_cts fs ms
+	sprintf "%s; function agent() { var $self = this; %s; %s; }" term_cts fs ms
 
   let emit chan = output_string chan >> js_of_ir_object
 end

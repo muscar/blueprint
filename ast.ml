@@ -33,6 +33,7 @@ and plan_action = action_op * formula
 and action_op = 
   | Call
   | AsyncCall
+  | ActionCall
   | MVarTake
   | MVarRead
   | MVarPut

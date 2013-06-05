@@ -75,7 +75,7 @@ plan_body:
 
 plan_action:
    | plan_action_prefix formula          { ($1, $2) }
-   | ACTION LPAR term_seq RPAR           { (Call, ($1, $3)) }
+   | ACTION LPAR term_seq RPAR           { (ActionCall, ($1, $3)) }
 
 plan_action_prefix:
    | EMARK  { Call }

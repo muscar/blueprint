@@ -13,7 +13,7 @@ type ir =
   | IRNew of string * ir list
   | IRCall of string * ir list
   | IRBind of name * ir * ir list
-  | IRReturn
+  | IRReturn of name
 and ir_ref_type = IRFieldRef | IRParamRef | IRLocalRef
 
 type symtab = (name, ir_ref_type) Symtab.t
@@ -67,8 +67,10 @@ let ir_of_plan st (name, clauses) =
 	| TStructure ("$and", args) -> IRCall ("$and", List.map ir_of_context args)
 	| term -> ir_of_term st term in
   let ir_of_plan_action = function
-	| (Call, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
+	(* XXX Hardcoded `$self` *)
+	| (Call, f) -> IRCall ("$self." ^ (fst f), List.map (ir_of_term st) (snd f))
 	| (AsyncCall, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
+	| (ActionCall, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarTake, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarRead, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarPut, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f)) in

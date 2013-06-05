@@ -6,3 +6,7 @@
    do twitter.get_tweets(Tweets);
    window.alert(Tweets);
    !correlate(WallPosts, Tweets).
+
++!correlate(P, T)
+<- window.alert(P);
+   window.alert(T).
