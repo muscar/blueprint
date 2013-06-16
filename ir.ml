@@ -7,11 +7,13 @@ module StringSet = Set.Make(String)
 type ir =
   | IRInt of int
   | IRString of string
+  | IRIgnore
   | IRLoad of ir_ref_type * name
   | IRSet of ir_ref_type * name * ir
   | IRCond of ir * ir list * ir list
   | IRNew of string * ir list
   | IRCall of string * ir list
+  | IRNativeCall of string * ir list
   | IRBind of name * ir * ir list
   | IRReturn of name
 and ir_ref_type = IRFieldRef | IRParamRef | IRLocalRef
@@ -29,10 +31,12 @@ let rec ir_of_term st = function
   | TNumber i -> IRInt i
   | TString s -> IRString s
   | TAtom a -> IRNew (a, [])
+  | TVariable "_" -> IRIgnore
   | TVariable v ->
 	(match Symtab.lookup st v with
 	| Some ref_ty -> IRLoad (ref_ty, v)
 	| _ -> failwith ("not bound: " ^ v))
+  | TBinOp (op, l, r) -> IRCall (op, [ir_of_term st l; ir_of_term st r])
   | TStructure (name, args) -> IRNew (name, List.map (ir_of_term st) args)
 
 let ir_of_belief st ((name, args), metadata) =
@@ -40,12 +44,13 @@ let ir_of_belief st ((name, args), metadata) =
 
 let ir_of_plan st (name, clauses) =
   let rec term_vars = function
-	| TVariable v -> [v]
+	| TVariable v when v <> "_" -> [v]
 	| TStructure (_, args) -> args |> List.map term_vars |> List.concat
 	| _ -> [] in
   let te_vars c = c |> clause_args |> List.map term_vars |> List.concat in
   let rec body_vars c = plan_stmt_vars c.body
   and plan_stmt_vars = function
+	| ActionNop -> []
 	| Action act -> action_vars act
 	| ActionSeq (act, stmt) | ActionDo (act, stmt) ->
 	  action_vars act @ plan_stmt_vars stmt
@@ -70,11 +75,12 @@ let ir_of_plan st (name, clauses) =
 	(* XXX Hardcoded `$self` *)
 	| (Call, f) -> IRCall ("$self." ^ (fst f), List.map (ir_of_term st) (snd f))
 	| (AsyncCall, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
-	| (ActionCall, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
+	| (ActionCall, f) -> IRNativeCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarTake, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarRead, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f))
 	| (MVarPut, f) -> IRCall (fst f, List.map (ir_of_term st) (snd f)) in
   let rec ir_of_plan_stmt context = function
+	| ActionNop -> []
 	| Action act -> [ir_of_plan_action act]
 	| ActionDo (act, stmt) -> [IRBind (context, ir_of_plan_action act, ir_of_plan_stmt context stmt)]
 	| ActionSeq (act, stmt) -> (ir_of_plan_action act) :: ir_of_plan_stmt context stmt in
@@ -100,7 +106,7 @@ let ir_of_plan st (name, clauses) =
 	| [c] | c::_ -> let test, body = ir_of_clause c in
 					IRCond (test, body, [IRCall ("$error", [IRString ("plan " ^ name ^ " failed")])])) in
   let unbind_locals = List.map (fun local ->
-	IRCall ("$unbind", [IRLoad (IRLocalRef, local)])) locals in
+	IRNativeCall (Printf.sprintf "%s.unbind" local, [IRIgnore])) locals in
   let body = List.fold_left (fun alt c ->
 	let test, body = ir_of_clause c in
 	unbind_locals @ [IRCond (test, body, alt)]) [default_clause] pclauses in

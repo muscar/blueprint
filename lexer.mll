@@ -7,7 +7,7 @@ let lowercase_letter = ['a'-'z']
 let uppercase_letter = ['A'-'Z']
 let letter = lowercase_letter | uppercase_letter
 let atom = lowercase_letter (letter | digit | '_')*
-let var = uppercase_letter (letter | digit)*
+let var = ( uppercase_letter (letter | digit)* ) | '_'
 let action = atom '.' (atom | '.')+
 
 rule token = parse

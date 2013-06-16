@@ -30,4 +30,16 @@ struct
 	  match f x with
 	  | Some y -> y::filter_map f xs
 	  | _ -> filter_map f xs
+
+  let butlast l = 
+	let rec loop acc = (function
+	  | [] -> failwith "empty list"
+	  | [x] -> List.rev acc
+	  | x::xs -> loop (x::acc) xs) in
+	loop [] l
+
+  let rec last = function
+	| [] -> failwith "empty list"
+	| [x] -> x
+	| x::xs -> last xs
 end

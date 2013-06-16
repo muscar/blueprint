@@ -1,36 +1,88 @@
 <html>
 <head>
-	<title>Test</title>
-	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-	<script type="text/javascript" src="blueprint.js"></script>
+    <title>Test</title>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="jquery.awesomecloud.min.js"></script>
+    <script type="text/javascript" src="fixup.js?v28"></script>
+    <script type="text/javascript" src="blueprint.js?v28"></script>
+    <script type="text/javascript" src="agent.js?v28"></script>
+
     <script type="text/javascript">
-    	var app_id = '210063665807387';
+        function makeCloud(elementId, wordsDict) {
+            var container = $(elementId);
+            container.empty();
+
+            for (var key in wordsDict) {
+                if (wordsDict.hasOwnProperty(key)) {
+                    container.append($('<span>').attr('data-weight', wordsDict[key]).text(key));
+                }
+            }
+
+            container.awesomeCloud({
+                "size" : {
+                    "grid" : 8, // word spacing, smaller is more tightly packed
+                    "factor" : 0, // font resize factor, 0 means automatic
+                    "normalize" : true // reduces outliers for more attractive output
+                },
+                "color" : {
+                    "background" : "rgba(4,8,16,255)", // background color, transparent by default
+                    "start" : "#20f", // color of the smallest font, if options.color = "gradient""
+                    "end" : "rgb(200,0,0)" // color of the largest font, if options.color = "gradient"
+                },
+                "options" : {
+                    "color" : "random-dark", // if "random-light" or "random-dark", color.start and color.end are ignored
+                    "rotationRatio" : 0.3, // 0 is all horizontal, 1 is all vertical
+                    "printMultiplier" : 1, // set to 3 for nice printer output; higher numbers take longer
+                    "sort" : "random" // "highest" to show big words first, "lowest" to do small words first, "random" to not care
+                },
+                "font" : "Helvetica, Arial, sans-serif", // the CSS font-family string
+                "shape" : "circle" // the selected shape keyword, or a theta function describing a shape
+            });
+        }
+
+        function run() {
+            var a = new agent();
+            a.social_plan();
+        }
     </script>
-	</script>
 </head>
 <body>
-	<div id="fb-root"></div>
-	<script>
-	  window.fbAsyncInit = function() {
-	    // init the FB JS SDK
-	    FB.init({
-	      appId      : 'muscar.github.io',
-	      channelUrl : '//muscar.github.io/blueprint.channel.html',
-	      status     : true,
-	      xfbml      : true
-	    });
+    <div>
+        This simple application will read your most recent facebook status messages and it will build a word cloud.
+    </div>
+    <button id="run-button" disabled="disabled" onclick="run();">Please wait...</button>
+    <div id="cloud" style="width: 800px; height: 800px;">
+    </div>
+    <div id="fb-root"></div>
+    <script>
+      window.fbAsyncInit = function() {
+        // init the FB JS SDK
+        FB.init({
+          appId      : '210063665807387',
+          channelUrl : '//muscar.github.io/blueprint.channel.html',
+          status     : true,
+          xfbml      : true
+        });
 
-	    // Additional initialization code such as adding Event Listeners goes here
-	  };
+         FB.login(function(response) {
+            if (response.authResponse) {
+                $("#run-button").text("Run").removeAttr("disabled");
+                run();
+            } else {
+                $("#run-button").text("An error occured").attr("disabled", "disabled");
+                alert("In order for the demo to work you need to allow it to read your facebook status messages.");
+            }
+         }, { scope: 'user_status' });
+      };
 
-	  // Load the SDK asynchronously
-	  (function(d, s, id){
-	     var js, fjs = d.getElementsByTagName(s)[0];
-	     if (d.getElementById(id)) {return;}
-	     js = d.createElement(s); js.id = id;
-	     js.src = "//connect.facebook.net/en_US/all.js";
-	     fjs.parentNode.insertBefore(js, fjs);
-	   }(document, 'script', 'facebook-jssdk'));
-	</script>
+      // Load the SDK asynchronously
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "//connect.facebook.net/en_US/all.js";
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+    </script>
 </body>
 </html>

@@ -43,10 +43,15 @@ toplevel_entry:
    | formula annotations PERIOD { Belief ($1, $2) }
    | clause                     { Clause $1 }
 
-clause: triggering_event annotations plan_context LARROW plan_body PERIOD { { triggering_event = $1;
-																			  annotations = $2;
-																			  context = $3;
-																			  body = $5 } }
+clause:
+   | triggering_event annotations PERIOD { { triggering_event = $1;
+											 annotations = $2;
+											 context = TAtom "true";
+											 body = ActionNop } }
+   | triggering_event annotations plan_context LARROW plan_body PERIOD { { triggering_event = $1;
+																		   annotations = $2;
+																		   context = $3;
+																		   body = $5 } }
 
 triggering_event: event_type goal_type formula { { event_type = $1;
 												   goal_type = $2;
@@ -91,6 +96,10 @@ term:
    | VARIABLE                            { TVariable $1 }
    | ATOM LPAR term_seq RPAR             { TStructure ($1, $3) }
    | LBRACK list_literal_elements RBRACK { $2 }
+   | term PLUS term                      { TBinOp ("+", $1, $3) }
+   | term MINUS term                     { TBinOp ("-", $1, $3) }
+   | term MUL term                       { TBinOp ("*", $1, $3) }
+   | term DIV term                       { TBinOp ("/", $1, $3) }
 
 term_seq:
      term                       { [$1] }

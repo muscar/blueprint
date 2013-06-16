@@ -6,6 +6,7 @@ type term =
   | TString of string
   | TAtom of name
   | TVariable of name
+  | TBinOp of string * term * term
   | TStructure of name * term list
 
 (** Derived ctors for terms *)
@@ -26,6 +27,7 @@ and triggering_event =
 and event_type = Add | Del
 and goal_type = Achievement | Test
 and plan_stmt =
+  | ActionNop
   | Action of plan_action
   | ActionSeq of plan_action * plan_stmt
   | ActionDo of plan_action * plan_stmt
