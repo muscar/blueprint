@@ -83,12 +83,12 @@ struct
 	let js_body = js_of_ir_seq body in
 	sprintf "this.%s = function (%s) { %s; %s }" name js_params js_locals js_body
 
-  let js_of_ir_object { fields; methods } =
+  let js_of_ir_object { name; fields; methods } =
 	Symtab.enter_scope term_ids;
 	let fs = fields |> List.map js_of_ir_field |> String.concat "; " in
 	let ms = methods |> List.map js_of_ir_method |> String.concat "; " in
 	let term_cts = Symtab.current term_ids |> Symtab.map_scope (sprintf "var %s = %d") |> String.concat "; " in
-	sprintf "%s; function agent() { var $self = this; %s; %s; }" term_cts fs ms
+	sprintf "%s; function %s() { var $self = this; %s; %s; }" term_cts name fs ms
 
   let emit chan = output_string chan >> js_of_ir_object
 end

@@ -29,9 +29,11 @@ let parse_string = parse >> Lexing.from_string
 
 let main () =
   try
-	parse_file Sys.argv.(1) |> ir_of_ast |> JSCodeGenerator.emit stdout
+    let source = Sys.argv.(1) in
+    let agentName = Filename.chop_extension (Filename.basename source) in
+    parse_file source |> ir_of_ast agentName |> JSCodeGenerator.emit stdout
   with ParseError (_, (line, col, tok)) ->
-	Printf.printf "%d, %d: parse error near `%s`\n" col line tok
+    Printf.printf "%d, %d: parse error near `%s`\n" col line tok
 ;;
 
 main ()
